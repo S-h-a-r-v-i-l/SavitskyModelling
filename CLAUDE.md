@@ -1,0 +1,165 @@
+# SavitskyModelling
+
+A from-scratch Python implementation of D. Savitsky's "Hydrodynamic Design
+of Planing Hulls" (Marine Technology, Vol. 1, No. 1, Oct. 1964, pp. 71-95)
+for a student electric boat (PEP27 Uncrewed Open division: ~45-60 kg hull +
+27 kg/60 lb removable payload, 15-20 mph target, 2-mile race, ≤55.5V/500Ah).
+Results must be defensible in the competition white paper, so **every
+formula cites its Savitsky equation number** in a comment/docstring, or is
+flagged as an external standard (Schoenherr friction, ITTC-57 — the paper
+cites but doesn't restate these). `python-openplaning` (PyPI: `openplaning`,
+class `PlaningBoat`) is used **only** as an independent test oracle in the
+dev test suite — never copied from, never a source of implementation logic.
+
+## Working agreement
+
+- Implement **one batch per turn**, then stop for validation/sign-off before
+  starting the next. Don't cascade into later batches even if the path
+  looks obvious.
+- After `/clear`: re-read this file, run `pytest -q` to see which batches'
+  tests exist and pass, check the batch list below for the next unchecked
+  item, and resume there.
+- Every module's purpose, paper-equation mapping, and role in the pipeline
+  is documented in `notes/` (one file per `src/savitsky/*.py` module,
+  `notes/README.md` is the index with the data-flow overview). Update the
+  relevant `notes/*.md` as part of each batch's own changes, not as an
+  afterthought.
+
+## Equation map
+
+| Topic | Eq. # | Notes |
+|---|---|---|
+| Wave-rise, λ vs λ₁ | (1) | flat-plate wetted length |
+| L₂ (chine/keel calm-water diff) | (2) | |
+| Lk − Lc (deadrise wetted-length diff) | (3) | matches Fig. 6 |
+| Lk = d/sinτ | (4) | |
+| λ = (Lk+Lc)/2b | (5) | |
+| Spray edge angle Φ, K, A, k₁ | (6) | future-hook material, not core path |
+| Spray area As | (7) | future-hook only |
+| CL (generic low-AR form) | (8)-(10) | derivation |
+| Buoyant lift Lb | (11) | |
+| **CL0 (zero-deadrise lift)** | **(15)** | `CL0 = τ^1.1 [0.0120λ^0.5 + 0.0055λ^2.5/Cv²]`, valid 0.60≤Cv≤13.00, 2°≤τ≤15°, λ≤4 |
+| **CLβ (deadrise lift)** | **(16)** | `CLβ = CL0 − 0.0065·β·CL0^0.60` |
+| Pressure drag Dp | (17) | `Δ tanτ` |
+| Total drag (frictionless+friction) | (18) | |
+| Friction drag Df | (19) | `Cf ρ V1² λb² / (2cosβ)` |
+| V1 (avg bottom velocity), β=0 | (23),(24) | generalizes to β≠0 via CLβ |
+| **Total hydrodynamic drag D** | **(25)** | `Δ tanτ + ρV1²Cfλb²/(2cosβcosτ)` |
+| D/Δ ratio | (26),(27) | |
+| **Center of pressure Cp = lp/(λb)** | **(28)** | `0.75 − 1/(5.21·Cv²/λ² + 2.39)` |
+| **General-case equilibrium** | **(29)-(31)** | vertical force, horizontal force, moment about CG |
+| Simplified equilibrium (ε=0) | (32),(35),(36) | thrust parallel to keel |
+| Simplest case (all forces through CG) | (37) | `N = Δ/cosτ`, `λ·Cp·b = LCG` |
+| Porpoising limits | Fig. 18 | τ vs √(CL/2), curves for β=0°,10°,20° |
+
+Schoenherr/ITTC-57 friction lines and ATTC roughness allowance ΔCf are
+external standards, not Savitsky equations — exposed as explicit, documented
+inputs rather than hardcoded unsourced formulas.
+
+## Package layout
+
+```
+src/savitsky/
+    __init__.py
+    constants.py           # g, fresh/salt water (rho, nu) defaults
+    geometry.py             # eq (1)-(5): wetted-length relations, Lk, Lc, L2, d
+    lift.py                  # eq (15),(16): CL0(tau,lambda,Cv), CLbeta; solve_lambda_from_CL
+    friction.py              # Schoenherr (implicit, brentq), ITTC-57, roughness, V1/V (eq 23/24)
+    drag.py                   # eq (17)-(19),(25)-(27): Dp, Df, D, D/Delta
+    center_of_pressure.py     # eq (28): Cp, lp
+    equilibrium_simple.py      # eq (37): solve tau via lp(tau) == LCG (brentq)
+    equilibrium_general.py     # eq (29)-(31)/(35): general case, thrust line + friction lever a
+    porpoising.py               # Fig. 18 digitized curves, stability check
+    result.py                    # PlaningResult dataclass + ResultFlag enum
+    core.py                       # solve_single_point(...) -> PlaningResult
+    sweep.py                       # solve_speed_sweep(...) -> list[PlaningResult]
+    hooks.py                        # future-extension stub interfaces only
+
+tests/
+    test_scaffolding.py              # Batch 1 smoke tests
+    test_paper_worked_example.py      # Table 1 (general case) + Table 2 (simple case) reproduction
+    test_against_openplaning.py        # grid vs openplaning.PlaningBoat, dev-only dependency
+    test_trends.py                      # monotonic trend checks
+    test_solver_robustness.py            # dry-chine / out-of-range / no-solution flags
+```
+
+All public functions in `geometry.py`/`lift.py`/`friction.py`/`drag.py`/
+`center_of_pressure.py` take/return plain floats (no hidden state) so
+`core.solve_single_point` stays a pure function — vectorizable later for
+sweeping thousands of hull variants without a redesign.
+
+## Conventions
+
+- SI at every public function boundary (m, N, rad internally for trig, kg,
+  m/s, Pa, m²/s). `tau_deg`/`tau_rad`, `beta_deg`/`beta_rad` kept explicit
+  wherever both appear — Savitsky's empirical fits take degrees, trig needs
+  radians.
+- `WaterProperties(rho, nu)` dataclass; fresh-water default, salt-water
+  preset available (`src/savitsky/constants.py`).
+- Friction line selectable: Schoenherr (implicit, solved via
+  `scipy.optimize.brentq`) or ITTC-57 (explicit). Optional roughness
+  allowance ΔCf (default 0.0).
+- All 1-D solves use bracketed `scipy.optimize.brentq` — no unbracketed
+  Newton iteration anywhere.
+- `PlaningResult` never raises on a bad physical case — it returns
+  `ResultFlag` bits (`NO_SOLUTION`, `MULTIPLE_ROOTS`, `DRY_CHINES`,
+  `OUT_OF_VALID_RANGE`) plus whatever partial numbers were computable.
+
+## Batch plan
+
+- [x] **Batch 1 — scaffolding.** `.gitignore`, `pyproject.toml`, package
+      skeleton (all modules as stubs), `constants.py`, `result.py`.
+      *Validated:* `pip install -e .` succeeds, package imports, smoke
+      tests pass. Committed `eca6677`.
+- [ ] **Batch 2 — geometry (eq. 1-5).** `geometry.py`: λ↔λ₁ wave-rise
+      relation, Lk−Lc, Lk, Lc, L2, d. *Validate:* unit tests against
+      hand-read points from Fig. 3/Fig. 6, plus Table 1/2's own Lk, Lc, d
+      (55.9 ft, 36.1 ft, 2.24 ft).
+- [ ] **Batch 3 — lift (eq. 15-16).** `lift.py`: `CL0(tau, lam, Cv)`,
+      `CLbeta(CL0, beta)`, `solve_lambda_from_CL` (bracketed root-find,
+      λ∈(0,4]). *Validate:* reproduce Table 1's `CL0/τ^1.1` rows
+      (.0397/.0254/.0185) and λ values (3.85/2.60/1.86) at CL0=.085.
+- [ ] **Batch 4 — friction (Schoenherr/ITTC-57, V1/V).** `friction.py`:
+      implicit Schoenherr (brentq), explicit ITTC-57, roughness allowance,
+      V1/V. *Validate:* reproduce Table 1's Cf (.00174/.00184/.00192) and
+      Vm (67.0/66.6/66.2 fps).
+- [ ] **Batch 5 — drag (eq. 17-19, 25-27).** `drag.py`: Dp, Df, D, D/Δ.
+      *Validate:* reproduce Table 1's Df (7340/5160/3760 lb) and D
+      (9434/8304/7948 lb).
+- [ ] **Batch 6 — center of pressure (eq. 28).** `center_of_pressure.py`:
+      Cp, lp. *Validate:* reproduce Table 1's Cp (.59/.65/.70) and Table 2's
+      Cp cross-check.
+- [ ] **Batch 7 — Phase 1 assembly.** `equilibrium_simple.py` (eq. 37,
+      bracketed root-find τ s.t. `Cp(Cv,λ(τ))·λ(τ)·b == LCG`),
+      `core.solve_single_point` wiring batches 2-6 for one hull/speed.
+      *Validate:* full reproduction of Table 2 (Δ=60,000 lb, LCG=29 ft,
+      b=14 ft, β=10°, V=40 kn → τ≈2.23°, D≈9010 lb, EHP≈1100), ~1-2% tol.
+- [ ] **Batch 8 — Phase 2: speed sweep.** `sweep.solve_speed_sweep` wrapping
+      batch 7 over an array of speeds. No new physics. *Validate:* sweep
+      for the Table 2 hull, eyeball monotonic trends; solver-robustness
+      flags (dry chines, out-of-range, no-solution) exercised across range.
+- [ ] **Batch 9 — Phase 3: general-case equilibrium.**
+      `equilibrium_general.py` (eq. 29-31/35, thrust line ε/f, friction
+      lever a); extends `core.solve_single_point` (simple case stays
+      available as ε=f=a=c=0). *Validate:* full reproduction of Table 1
+      (a=1.39 ft, f=0.50 ft, ε=4° → τe≈2.3°, D≈9095 lb, EHP≈1115).
+- [ ] **Batch 10 — cross-validation suite.** `test_against_openplaning.py`
+      (grid speed×deadrise×LCG, report >3% disagreements, no auto-"fixing")
+      and `test_trends.py` (trim↓ w/ speed, drag↑ w/ deadrise, trim↑ as LCG
+      moves aft). *Validate:* review disagreement report together.
+- [ ] **Batch 11 — Phase 4: porpoising.** Digitize/fit Fig. 18 — **ask
+      first** how to do this (manual tie-points + interpolation vs.
+      digitized curve-fit vs. other) before writing any code.
+
+Future hooks (`hooks.py`: `effective_deadrise`, `pre_planing_resistance`,
+`DrivetrainModel`/`BatteryModel`/`PropellerModel` Protocols) get added
+opportunistically when a batch naturally exposes the extension point — not
+a batch of their own.
+
+## Verification
+
+- `pip install -e ".[dev]"` then `pytest -q`.
+- Manual sanity check once Batch 8 lands: print a speed sweep for a rough
+  PEP27-scale hull (b≈0.5 m, β≈15-20°, Δ≈(45-60 kg + 27 kg)·9.81 N) across
+  5-10 m/s and eyeball trim/drag curves before trusting them for design
+  decisions.
