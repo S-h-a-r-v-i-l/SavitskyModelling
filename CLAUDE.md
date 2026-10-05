@@ -125,10 +125,17 @@ sweeping thousands of hull variants without a redesign.
       than 0.005 beams, Table 1's Lk/Lc/d reproduced to
       −0.10%/+0.49%/+0.05% (the Lc gap is the paper's own hand-arithmetic
       slop: its stated inputs give 36.28 ft at full precision).
-- [ ] **Batch 3 — lift (eq. 15-16).** `lift.py`: `CL0(tau, lam, Cv)`,
-      `CLbeta(CL0, beta)`, `solve_lambda_from_CL` (bracketed root-find,
-      λ∈(0,4]). *Validate:* reproduce Table 1's `CL0/τ^1.1` rows
-      (.0397/.0254/.0185) and λ values (3.85/2.60/1.86) at CL0=.085.
+- [x] **Batch 3 — lift (eq. 15-16).** `lift.py`:
+      `zero_deadrise_lift_coefficient`, `deadrise_lift_coefficient`,
+      `solve_cl0_from_cl_beta`, `solve_lambda_from_cl0` (bracketed
+      root-finds), plus the published validity constants. *Validated:* 50
+      tests in `tests/test_lift.py` — Table 1's `CL0/τ^1.1` rows
+      (.0397/.0254/.0185) matched to <0.2%; λ vs Fig. 10 reads
+      +0.6%/+0.4%/−3.0% at τ=2/3/4°, with the −3.0% explained (Fig. 10
+      only draws Cv=3.0 and 4.0; the example needs 3.18, and the paper's
+      1.86 falls inside our [1.768, 1.937] bracket — asserted by test).
+      Note solve functions raise `ValueError`; Batch 7 converts to
+      `NO_SOLUTION`.
 - [ ] **Batch 4 — friction (Schoenherr/ITTC-57, V1/V).** `friction.py`:
       implicit Schoenherr (brentq), explicit ITTC-57, roughness allowance,
       V1/V. *Validate:* reproduce Table 1's Cf (.00174/.00184/.00192) and
