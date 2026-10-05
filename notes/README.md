@@ -44,6 +44,11 @@ result.py / constants.py — shared types (PlaningResult, ResultFlag,
 
 ## Index
 
+- [`paper_reference.md`](paper_reference.md) — **start here when validating
+  a batch.** All worked-example data (Tables 1 and 2 in full), the ρ/ν the
+  paper actually used, validity ranges, PDF page map, and the known errors
+  in the paper. Written so batches can be validated without re-reading the
+  PDF.
 - [`__init__.md`](__init__.md) — package root
 - [`constants.md`](constants.md) — water properties, gravity
 - [`result.md`](result.md) — `PlaningResult`, `ResultFlag`

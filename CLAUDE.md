@@ -24,6 +24,14 @@ dev test suite — never copied from, never a source of implementation logic.
   `notes/README.md` is the index with the data-flow overview). Update the
   relevant `notes/*.md` as part of each batch's own changes, not as an
   afterthought.
+- **`notes/paper_reference.md` holds all worked-example data** (Tables 1
+  and 2 in full, the derived ρ/ν the paper used, validity ranges, the PDF
+  page map, and the known errors in the paper). Read it before starting a
+  batch — it is designed so you do **not** need to re-read the PDF. Two
+  things in it that will otherwise bite: the example runs in fresh water
+  with ν = 1.00×10⁻⁵ ft²/s (our `FRESH_WATER` preset will not reproduce
+  the paper's Re/Cf), and Table 1's printed λe = 3.29 is an arithmetic
+  error for ≈3.42-3.475.
 
 ## Equation map
 
@@ -111,10 +119,12 @@ sweeping thousands of hull variants without a redesign.
       skeleton (all modules as stubs), `constants.py`, `result.py`.
       *Validated:* `pip install -e .` succeeds, package imports, smoke
       tests pass. Committed `eca6677`.
-- [ ] **Batch 2 — geometry (eq. 1-5).** `geometry.py`: λ↔λ₁ wave-rise
-      relation, Lk−Lc, Lk, Lc, L2, d. *Validate:* unit tests against
-      hand-read points from Fig. 3/Fig. 6, plus Table 1/2's own Lk, Lc, d
-      (55.9 ft, 36.1 ft, 2.24 ft).
+- [x] **Batch 2 — geometry (eq. 1-5).** `geometry.py`: λ↔λ₁ wave-rise
+      relation, Lk−Lc, Lk, Lc, L2, d. *Validated:* 30 tests in
+      `tests/test_geometry.py` — Fig. 3/Fig. 6 chart reads agree to better
+      than 0.005 beams, Table 1's Lk/Lc/d reproduced to
+      −0.10%/+0.49%/+0.05% (the Lc gap is the paper's own hand-arithmetic
+      slop: its stated inputs give 36.28 ft at full precision).
 - [ ] **Batch 3 — lift (eq. 15-16).** `lift.py`: `CL0(tau, lam, Cv)`,
       `CLbeta(CL0, beta)`, `solve_lambda_from_CL` (bracketed root-find,
       λ∈(0,4]). *Validate:* reproduce Table 1's `CL0/τ^1.1` rows
