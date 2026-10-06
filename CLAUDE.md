@@ -19,6 +19,10 @@ dev test suite — never copied from, never a source of implementation logic.
 - After `/clear`: re-read this file, run `pytest -q` to see which batches'
   tests exist and pass, check the batch list below for the next unchecked
   item, and resume there.
+- **After finishing a batch, write a short non-technical summary** of what
+  it added: plain language, minimal jargon, the kind of thing a teammate
+  or a competition judge could read. Say what it does, why it matters, and
+  how we know it is right. Keep it short.
 - Every module's purpose, paper-equation mapping, and role in the pipeline
   is documented in `notes/` (one file per `src/savitsky/*.py` module,
   `notes/README.md` is the index with the data-flow overview). Update the
@@ -136,10 +140,16 @@ sweeping thousands of hull variants without a redesign.
       1.86 falls inside our [1.768, 1.937] bracket — asserted by test).
       Note solve functions raise `ValueError`; Batch 7 converts to
       `NO_SOLUTION`.
-- [ ] **Batch 4 — friction (Schoenherr/ITTC-57, V1/V).** `friction.py`:
+- [x] **Batch 4 — friction (Schoenherr/ITTC-57, V1/V).** `friction.py`:
       implicit Schoenherr (brentq), explicit ITTC-57, roughness allowance,
-      V1/V. *Validate:* reproduce Table 1's Cf (.00174/.00184/.00192) and
-      Vm (67.0/66.6/66.2 fps).
+      V1/V + Reynolds number. *Validated:* 43 tests in
+      `tests/test_friction.py` — Table 1's Cf reproduced to <0.3%, row 9
+      (Cf+ΔCf) to 0.4%, Re to 0.5%, Vm to 0.33%, and Fig. 14 reads to
+      0.006. **Judgement call recorded:** the paper prints eq. (24) for
+      β=0 only and leaves Fig. 14's f(β) undefined; we apply eq. (16) to
+      the dynamic lift term per the text on p. 83, which matches the
+      readable end of Fig. 14 (λ=1) and the correct trend direction. See
+      `notes/friction.md`. Remember Re uses λ·b and V1, not b and V.
 - [ ] **Batch 5 — drag (eq. 17-19, 25-27).** `drag.py`: Dp, Df, D, D/Δ.
       *Validate:* reproduce Table 1's Df (7340/5160/3760 lb) and D
       (9434/8304/7948 lb).
