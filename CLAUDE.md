@@ -170,11 +170,15 @@ sweeping thousands of hull variants without a redesign.
       at 33% of wetted length); Table 2's implied Cp=0.600 reproduced as
       0.6033; Table 1 row 17 within 1.4% (Fig. 17 chart reads). No Fig. 17
       chart-read tests by design — that figure is just a plot of eq. (28).
-- [ ] **Batch 7 — Phase 1 assembly.** `equilibrium_simple.py` (eq. 37,
-      bracketed root-find τ s.t. `Cp(Cv,λ(τ))·λ(τ)·b == LCG`),
-      `core.solve_single_point` wiring batches 2-6 for one hull/speed.
-      *Validate:* full reproduction of Table 2 (Δ=60,000 lb, LCG=29 ft,
-      b=14 ft, β=10°, V=40 kn → τ≈2.23°, D≈9010 lb, EHP≈1100), ~1-2% tol.
+- [x] **Batch 7 — Phase 1 assembly.** `equilibrium_simple.py` (eq. 37,
+      bracketed root-find; residual proven strictly decreasing so the root
+      is unique and MULTIPLE_ROOTS cannot arise here) +
+      `core.solve_single_point` wiring batches 2-6. *Validated:* 35 tests
+      — full Table 2 reproduction from raw inputs: τ 2.216° vs 2.23
+      (−0.6%), λ 3.426 vs 3.45 (−0.7%), Df 6653 vs 6670 lb (−0.3%),
+      D 8980 vs 9010 lb (−0.3%), power 1102 vs 1100 hp (+0.2%), using
+      ρ=2.00 slug/ft³ per caveat A2. Never-raise contract verified over a
+      96-case sweep. `result.EHP` renamed `effective_power` (watts).
 - [ ] **Batch 8 — Phase 2: speed sweep.** `sweep.solve_speed_sweep` wrapping
       batch 7 over an array of speeds. No new physics. *Validate:* sweep
       for the Table 2 hull, eyeball monotonic trends; solver-robustness
