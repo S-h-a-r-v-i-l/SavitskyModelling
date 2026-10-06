@@ -150,9 +150,14 @@ sweeping thousands of hull variants without a redesign.
       the dynamic lift term per the text on p. 83, which matches the
       readable end of Fig. 14 (λ=1) and the correct trend direction. See
       `notes/friction.md`. Remember Re uses λ·b and V1, not b and V.
-- [ ] **Batch 5 — drag (eq. 17-19, 25-27).** `drag.py`: Dp, Df, D, D/Δ.
-      *Validate:* reproduce Table 1's Df (7340/5160/3760 lb) and D
-      (9434/8304/7948 lb).
+- [x] **Batch 5 — drag (eq. 17-19, 25-27).** `drag.py`: Dp, Df, D, D/Δ.
+      *Validated:* 24 tests in `tests/test_drag.py` — Table 1's Df matched
+      to <0.36%, Dp to <0.2%, D to <0.28%; Table 2 near exact (Df 6669 vs
+      6670 lb, D 9010 vs 9010 lb). **Found: the paper mixes two water
+      densities.** Its Df rows imply ρ≈2.00 slug/ft³ (seawater) while its
+      CLβ line implies 1.94 (fresh) — 3% apart, so no single ρ reproduces
+      both printed quantities. Tests use 2.00 for drag; ρ stays a caller
+      input. See `notes/drag.md` and `notes/paper_reference.md`.
 - [ ] **Batch 6 — center of pressure (eq. 28).** `center_of_pressure.py`:
       Cp, lp. *Validate:* reproduce Table 1's Cp (.59/.65/.70) and Table 2's
       Cp cross-check.

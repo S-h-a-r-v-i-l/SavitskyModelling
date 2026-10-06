@@ -205,17 +205,32 @@ Recorded so later batches don't "fix" our code to chase a bad number.
    produce Lk/Lc about 4% off Table 1's printed values. That is the
    paper's error, not ours.**
 
-2. **Table 1's Lc is ~0.5% off its own inputs (seen in Batch 2).**
+2. **The tables mix two water densities (seen in Batch 5).** Inverting
+   eq. (19) on all four printed Df values backs out
+   rho = 1.994 / 2.007 / 1.998 / 2.000 slug/ft^3 (Table 1's three trim
+   columns, then Table 2) -- i.e. the drag rows were computed with
+   **rho = 2.00 slug/ft^3**, a rounded seawater value. But the CLbeta
+   line at the head of the same tables reads
+   `60,000 / 0.97 x 67.5^2 x 14^2`, and 0.97 is rho/2 for **fresh**
+   water, rho = 1.94. The two differ by 3%. Using 1.94 in eq. (19)
+   undershoots the paper's own printed Df by about 3% at every trim.
+   **Consequence for Batches 7 and 9:** a single self-consistent density
+   cannot reproduce both the printed CLbeta and the printed Df. Decide
+   which to match and say so; our drag tests use 2.00 slug/ft^3 because
+   that is what the drag rows were actually computed with. Our library
+   takes density as an input, so neither value is baked in.
+
+3. **Table 1's Lc is ~0.5% off its own inputs (seen in Batch 2).**
    Carrying the paper's stated λe = 3.29, b = 14 ft, β = 10°, τe = 2.3°
    at full precision gives Lc = 36.28 ft, but 36.1 ft is printed. Lk
    (−0.10%) and d (+0.05%) match closely, so this is isolated hand
    arithmetic, not a formula difference.
 
-3. **Typos (harmless, intent unambiguous):** Table 1's drag line prints
+4. **Typos (harmless, intent unambiguous):** Table 1's drag line prints
    "9424" for 9,434; Table 2 row 17's source prints "(8) + (17)" for
    (8)+(16).
 
-4. **Eq. (1) vs eq. (5) disagree at β = 0** (seen in Batch 2). Eq. (5)
+5. **Eq. (1) vs eq. (5) disagree at β = 0** (seen in Batch 2). Eq. (5)
    gives λ = λ₁ (no wave rise) for a flat plate, while eq. (1) gives
    λ = λ₁ + 0.30. Known limitation of the deadrise formulation; the two
    are separate tracks and eq. (1) is not used in the solver path.
