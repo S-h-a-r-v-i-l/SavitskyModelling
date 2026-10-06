@@ -28,6 +28,11 @@ dev test suite — never copied from, never a source of implementation logic.
   `notes/README.md` is the index with the data-flow overview). Update the
   relevant `notes/*.md` as part of each batch's own changes, not as an
   afterthought.
+- **`notes/caveats.md`** collects everything a competition reviewer could
+  challenge: errors in the paper we deliberately do not reproduce,
+  judgement calls where the paper is silent, the 1-3% chart-reading floor
+  on agreement, and the method's validity limits for our hull. Add to it
+  whenever a batch turns up something of that kind.
 - **`notes/paper_reference.md` holds all worked-example data** (Tables 1
   and 2 in full, the derived ρ/ν the paper used, validity ranges, the PDF
   page map, and the known errors in the paper). Read it before starting a
@@ -158,9 +163,13 @@ sweeping thousands of hull variants without a redesign.
       CLβ line implies 1.94 (fresh) — 3% apart, so no single ρ reproduces
       both printed quantities. Tests use 2.00 for drag; ρ stays a caller
       input. See `notes/drag.md` and `notes/paper_reference.md`.
-- [ ] **Batch 6 — center of pressure (eq. 28).** `center_of_pressure.py`:
-      Cp, lp. *Validate:* reproduce Table 1's Cp (.59/.65/.70) and Table 2's
-      Cp cross-check.
+- [x] **Batch 6 — center of pressure (eq. 28).** `center_of_pressure.py`:
+      Cp, lp. *Validated:* 12 tests in `tests/test_center_of_pressure.py`
+      — both asymptotic limits exact (Cv→∞ gives 0.75, Cv→0 gives 0.332,
+      matching the paper's prose that dynamic lift acts at 75% and buoyant
+      at 33% of wetted length); Table 2's implied Cp=0.600 reproduced as
+      0.6033; Table 1 row 17 within 1.4% (Fig. 17 chart reads). No Fig. 17
+      chart-read tests by design — that figure is just a plot of eq. (28).
 - [ ] **Batch 7 — Phase 1 assembly.** `equilibrium_simple.py` (eq. 37,
       bracketed root-find τ s.t. `Cp(Cv,λ(τ))·λ(τ)·b == LCG`),
       `core.solve_single_point` wiring batches 2-6 for one hull/speed.

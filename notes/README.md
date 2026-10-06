@@ -44,6 +44,10 @@ result.py / constants.py — shared types (PlaningResult, ResultFlag,
 
 ## Index
 
+- [`caveats.md`](caveats.md) — **read before writing anything for the
+  competition.** Errors in the source paper, judgement calls we had to make
+  where it is silent, why agreement is 1-3% rather than exact, and where the
+  method stops applying to our boat.
 - [`paper_reference.md`](paper_reference.md) — **start here when validating
   a batch.** All worked-example data (Tables 1 and 2 in full), the ρ/ν the
   paper actually used, validity ranges, PDF page map, and the known errors
